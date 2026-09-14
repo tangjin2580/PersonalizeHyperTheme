@@ -1,9 +1,15 @@
 package com.tangjin.personalizehyper.theme
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -15,6 +21,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -65,6 +72,17 @@ class LogActivity : ComponentActivity(), Runnable {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // 状态栏透明 + 深色图标，让内容延伸到状态栏后方、与本机融合
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.light(
+                android.graphics.Color.TRANSPARENT,
+                android.graphics.Color.TRANSPARENT
+            ),
+            navigationBarStyle = SystemBarStyle.light(
+                android.graphics.Color.TRANSPARENT,
+                android.graphics.Color.TRANSPARENT
+            )
+        )
         try {
             setContent {
                 MaterialTheme(colorScheme = appColorScheme()) {
@@ -218,8 +236,9 @@ class LogActivity : ComponentActivity(), Runnable {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
+                    .safeDrawingPadding()
                     .verticalScroll(rememberScrollState())
-                    .padding(16.dp)
+                    .padding(horizontal = 16.dp)
             ) {
                 // 顶部标题
                 Text(
@@ -246,8 +265,93 @@ class LogActivity : ComponentActivity(), Runnable {
                 // 日志显示卡片
                 LogCard()
                 Spacer(Modifier.height(16.dp))
+
+                // 底部作者信息图标
+                FooterIcons()
+                Spacer(Modifier.height(8.dp))
             }
         }
+    }
+
+    @Composable
+    private fun FooterIcons() {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(28.dp)) {
+                FooterIcon("\uD83D\uDC19", "GitHub") {
+                    openUrl("https://github.com/tangjin2580")
+                }
+                FooterIcon("\uD83D\uDC27", "QQ") {
+                    openQQ()
+                }
+                FooterIcon("\uD83D\uDCAC", "酷安") {
+                    openUrl("https://www.coolapk.com/u/1143984")
+                }
+            }
+            Spacer(Modifier.height(10.dp))
+            Text(
+                text = "作者：Mr.li",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+
+    @Composable
+    private fun FooterIcon(emoji: String, label: String, onClick: () -> Unit) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.clickable { onClick() }
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .background(
+                        MaterialTheme.colorScheme.primaryContainer,
+                        RoundedCornerShape(14.dp)
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(emoji, fontSize = 22.sp)
+            }
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+
+    private fun openUrl(url: String) {
+        try {
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+        } catch (t: Throwable) {
+            Toast.makeText(this, "无法打开链接：$url", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun openQQ() {
+        val qq = "2324099478"
+        try {
+            // 打开 QQ 个人资料卡（主页）
+            startActivity(
+                Intent(
+                    Intent.ACTION_VIEW,
+                    Uri.parse("mqqapi://card/show_pslcard?src_type=internal&version=1&uin=$qq")
+                )
+            )
+        } catch (t: Throwable) {
+            copyToClipboard(qq)
+            Toast.makeText(this, "QQ 号已复制：$qq", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun copyToClipboard(text: String) {
+        val cm = getSystemService(ClipboardManager::class.java)
+        cm?.setPrimaryClip(ClipData.newPlainText("qq", text))
     }
 
     @Composable
