@@ -6,12 +6,12 @@ plugins {
 }
 
 android {
-    namespace = "com.yuk.fuckMiuiThemeManager"
+    namespace = "com.tangjin.personalizehyper.theme"
     compileSdk = 34
     buildToolsVersion = "34.0.0"
 
     defaultConfig {
-        applicationId = "com.yuk.fuckMiuiThemeManager"
+        applicationId = "com.tangjin.personalizehyper.theme"
         minSdk = 29
         targetSdk = 34
         versionCode = 19
@@ -58,7 +58,7 @@ android {
     applicationVariants.all {
         outputs.all {
             (this as BaseVariantOutputImpl).outputFileName =
-                "FuckMiuiThemeManager-$versionName-$name.apk"
+                "PersonalizeHyperTheme-$versionName-$name.apk"
         }
     }
 }

@@ -1,14 +1,16 @@
-# FuckMiuiThemeManager
+# PersonalizeHyperTheme
 
-适用于中国版 MIUI / HyperOS 的 Xposed 主题破解模块。
+适用于中国版 MIUI / HyperOS 的 Xposed 主题个性化模块。
 
-[![CI](https://github.com/tangjin2580/FuckMiuiThemeManager/actions/workflows/main.yml/badge.svg)](https://github.com/tangjin2580/FuckMiuiThemeManager/actions/workflows/main.yml)
-[![Stars](https://img.shields.io/github/stars/tangjin2580/FuckMiuiThemeManager?label=stars)](https://github.com/tangjin2580/FuckMiuiThemeManager)
-[![Version](https://img.shields.io/badge/version-1.9.0-blue)](https://github.com/tangjin2580/FuckMiuiThemeManager)
+[![CI](https://github.com/tangjin2580/PersonalizeHyperTheme/actions/workflows/main.yml/badge.svg)](https://github.com/tangjin2580/PersonalizeHyperTheme/actions/workflows/main.yml)
+[![Stars](https://img.shields.io/github/stars/tangjin2580/PersonalizeHyperTheme?label=stars)](https://github.com/tangjin2580/PersonalizeHyperTheme)
+[![Version](https://img.shields.io/badge/version-1.9.0-blue)](https://github.com/tangjin2580/PersonalizeHyperTheme)
 [![License](https://img.shields.io/badge/license-GPL--3.0-green)](LICENSE)
-[![Platform](https://img.shields.io/badge/platform-Android%2010%2B%20%2F%20HyperOS-brightgreen)](https://github.com/tangjin2580/FuckMiuiThemeManager)
+[![Platform](https://img.shields.io/badge/platform-Android%2010%2B%20%2F%20HyperOS-brightgreen)](https://github.com/tangjin2580/PersonalizeHyperTheme)
 
-> 本仓库为**独立维护**的版本，代码与上游 `gsymasd/FuckMiuiThemeManager` 不再同步。
+> 本项目由 [FuckMiuiThemeManager](https://github.com/tangjin2580/FuckMiuiThemeManager) 独立而来，
+> 包名已改为 `com.tangjin.personalizehyper.theme`。**从旧版升级需先卸载旧版再安装**，
+> 并在 LSPosed 中重新勾选作用域后重启。
 
 ---
 
@@ -32,7 +34,7 @@
 ## 安装
 
 1. 下载 Release 里的 APK，或直接 `./gradlew assembleRelease` 自行编译
-2. 安装 APK（**签名与官方版本不同，覆盖安装前需先卸载旧版**）
+2. 安装 APK（**包名与旧版不同，签名也与官方版本不同，安装前需先卸载旧版**）
 3. 在 LSPosed 中启用模块，并勾选作用域
 4. **重启手机**
 
@@ -61,7 +63,7 @@
 | V / D / I / W / E | 等级过滤（V 默认关闭） |
 
 **日志来源**：Android 11 之后应用读不到其它进程的 logcat，所以界面读取的是 LSPosed 的落盘日志
-`/data/adb/lspd/log/modules_*.log`，并只保留本模块（`[com.yuk.fuckMiuiThemeManager,XposedBridge`）的输出。
+`/data/adb/lspd/log/modules_*.log`，并只保留本模块（`[com.tangjin.personalizehyper.theme,XposedBridge`）的输出。
 因此**首次打开需要授予 root 权限**，若 Magisk 弹出授权请点「允许」并记住。
 
 需要连电脑抓日志时，模块也会**同时**写入 logcat（tag `FuckThemeManager`）：
@@ -115,7 +117,7 @@ adb logcat -s FuckThemeManager:V
 ### 项目结构
 
 ```
-app/src/main/java/com/yuk/fuckMiuiThemeManager/
+app/src/main/java/com/tangjin/personalizehyper/theme/
 ├── XposedInit.kt          # 模块入口，四个作用域的全部 hook
 ├── LogActivity.kt         # 日志界面（开始/停止/刷新/清空/重启宿主/等级过滤）
 ├── LogReader.kt           # 读取并过滤模块日志

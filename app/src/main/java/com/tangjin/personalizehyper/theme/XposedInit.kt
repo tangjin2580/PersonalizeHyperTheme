@@ -1,4 +1,4 @@
-package com.yuk.fuckMiuiThemeManager
+package com.tangjin.personalizehyper.theme
 
 import com.github.kyuubiran.ezxhelper.ClassUtils
 import com.github.kyuubiran.ezxhelper.finders.FieldFinder

@@ -1,4 +1,4 @@
-package com.yuk.fuckMiuiThemeManager
+package com.tangjin.personalizehyper.theme
 
 import android.util.Log
 import java.io.BufferedReader
@@ -106,7 +106,7 @@ class LogReader(private val act: LogActivity) : Runnable {
         const val LSPD_LOG = "/data/adb/lspd/log/modules_*.log"
 
         /** LSPosed 写入的模块标识前缀，用于把系统/其它模块的日志全部过滤掉 */
-        private const val MODULE_MARK = "[com.yuk.fuckMiuiThemeManager,XposedBridge"
+        private const val MODULE_MARK = "[com.tangjin.personalizehyper.theme,XposedBridge"
 
         /** 只保留本模块的 XposedBridge 日志 */
         fun isModuleLine(line: String): Boolean = line.contains(MODULE_MARK)
@@ -114,7 +114,7 @@ class LogReader(private val act: LogActivity) : Runnable {
         /**
          * 把 LSPosed 的长前缀裁掉，只留「时间 + 正文」：
          *
-         * 输入：`[ 2026-09-14T04:36:13.441  10283:10283:10283 I/LSPosedFramework ] (宿主)[com.yuk...XposedBridge...] FTM: xxx`
+         * 输入：`[ 2026-09-14T04:36:13.441  10283:10283:10283 I/LSPosedFramework ] (宿主)[com.tangjin.personalizehyper.theme,XposedBridge...] FTM: xxx`
          * 输出：`2026-09-14T04:36:13.441 FTM: xxx`
          *
          * 解析不出前缀时原样返回，保证不丢日志。

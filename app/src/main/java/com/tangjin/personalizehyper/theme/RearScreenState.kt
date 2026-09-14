@@ -1,4 +1,4 @@
-package com.yuk.fuckMiuiThemeManager
+package com.tangjin.personalizehyper.theme
 
 /**
  * 背屏（后置屏）主题的应用窗口标记。

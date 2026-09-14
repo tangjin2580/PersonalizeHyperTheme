@@ -5,5 +5,5 @@
     <string name="xposed_init">"作用域必须包含全部作用域，且系统框架生效需重启手机！！
 将模块分享到 酷安/官方Q群/小米社区 等平台，所带来的后果请自行承担
 
-作者：Mr.li｜本模块基于原分支小修小补（含背屏 apply 修复），随时停更"</string>
+作者：Mr.li｜本项目由 FuckMiuiThemeManager 独立而来（含背屏 apply 修复），随时停更"</string>
 </resources>

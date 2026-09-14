@@ -1,4 +1,4 @@
-package com.yuk.fuckMiuiThemeManager
+package com.tangjin.personalizehyper.theme
 
 import android.app.Activity
 import android.graphics.Typeface
@@ -192,7 +192,7 @@ class LogActivity : Activity(), View.OnClickListener, Runnable {
             val cmd = arrayOf(
                 "su",
                 "-c",
-                "grep -F '[com.yuk.fuckMiuiThemeManager,XposedBridge' ${LogReader.LSPD_LOG} | tail -n 300"
+                "grep -F '[com.tangjin.personalizehyper.theme,XposedBridge' ${LogReader.LSPD_LOG} | tail -n 300"
             )
             val reader = BufferedReader(
                 InputStreamReader(Runtime.getRuntime().exec(cmd).inputStream)

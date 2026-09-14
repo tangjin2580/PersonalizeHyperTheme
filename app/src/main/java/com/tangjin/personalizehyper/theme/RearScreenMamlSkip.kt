@@ -1,4 +1,4 @@
-package com.yuk.fuckMiuiThemeManager
+package com.tangjin.personalizehyper.theme
 
 import de.robv.android.xposed.XC_MethodHook
 

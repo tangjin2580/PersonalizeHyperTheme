@@ -16,5 +16,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "FuckMiuiThemeManager"
+rootProject.name = "PersonalizeHyperTheme"
 include(":app")
