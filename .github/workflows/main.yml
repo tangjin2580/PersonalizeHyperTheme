@@ -24,11 +24,25 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Build with Gradle
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          android-sdk-file: ~/android-sdk
+        
+      - name: Build Debug APK (for testing)
+        run: ./gradlew assembleDebug
+        
+      - name: Build Release APK
         run: ./gradlew assembleRelease
 
-      - name: Upload APK
+      - name: Upload Debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug
+          path: app/build/outputs/apk/debug/PersonalizeHyperTheme-*.apk
+          
+      - name: Upload Release APK
         uses: actions/upload-artifact@v4
         with:
           name: app-release
-          path: app/build/outputs/apk/release/
+          path: app/build/outputs/apk/release/PersonalizeHyperTheme-*.apk
