@@ -3,6 +3,7 @@ import com.android.build.gradle.internal.api.BaseVariantOutputImpl
 plugins {
     id("com.android.application")
     id("kotlin-android")
+    id("org.jetbrains.kotlin.plugin.compose")
 }
 
 android {
@@ -44,6 +45,10 @@ android {
         jvmTarget = "17"
     }
 
+    buildFeatures {
+        compose = true
+    }
+
     packaging {
         resources {
             excludes += "/META-INF/**"
@@ -73,4 +78,12 @@ dependencies {
     implementation("com.github.kyuubiran:EzXHelper:2.2.1")
     // 按字符串特征反查被混淆的方法（自带 libdexkit.so）
     implementation("org.luckypray:DexKit:1.1.8")
+
+    // Jetpack Compose（现代化 UI）
+    implementation(platform("androidx.compose:compose-bom:2024.12.01"))
+    implementation("androidx.compose.ui:ui")
+    implementation("androidx.compose.ui:ui-graphics")
+    implementation("androidx.compose.foundation:foundation")
+    implementation("androidx.compose.material3:material3")
+    implementation("androidx.activity:activity-compose:1.9.3")
 }
