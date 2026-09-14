@@ -3,6 +3,7 @@ name: Android CI
 on:
   push:
     branches: [ main ]
+    tags: [ 'v*' ]
   pull_request:
     branches: [ main ]
   workflow_dispatch:
@@ -28,10 +29,10 @@ jobs:
         uses: android-actions/setup-android@v3
         with:
           android-sdk-file: ~/android-sdk
-        
+
       - name: Build Debug APK (for testing)
         run: ./gradlew assembleDebug
-        
+
       - name: Build Release APK
         run: ./gradlew assembleRelease
 
@@ -40,9 +41,33 @@ jobs:
         with:
           name: app-debug
           path: app/build/outputs/apk/debug/PersonalizeHyperTheme-*.apk
-          
+
       - name: Upload Release APK
         uses: actions/upload-artifact@v4
         with:
           name: app-release
           path: app/build/outputs/apk/release/PersonalizeHyperTheme-*.apk
+
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download Release APK
+        uses: actions/download-artifact@v4
+        with:
+          name: app-release
+          path: release-apk
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          tag_name: ${{ github.ref_name }}
+          files: release-apk/*.apk
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

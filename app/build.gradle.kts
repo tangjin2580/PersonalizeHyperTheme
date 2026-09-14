@@ -15,8 +15,8 @@ android {
         applicationId = "com.tangjin.personalizehyper.theme"
         minSdk = 29
         targetSdk = 34
-        versionCode = 19
-        versionName = "1.9.0"
+        versionCode = 20
+        versionName = "2.0.0"
 
         // 只出手机端 ABI，x86 没有实际意义却会让体积翻几倍
         ndk {
@@ -47,6 +47,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     packaging {

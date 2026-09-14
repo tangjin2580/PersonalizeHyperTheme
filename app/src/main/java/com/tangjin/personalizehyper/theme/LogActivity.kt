@@ -27,12 +27,14 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -48,6 +50,9 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.io.PrintWriter
 import java.io.StringWriter
+import java.net.HttpURLConnection
+import java.net.URL
+import org.json.JSONObject
 
 /**
  * 模块日志界面（Jetpack Compose 现代化版）。
@@ -69,6 +74,10 @@ class LogActivity : ComponentActivity(), Runnable {
     private val showI = mutableStateOf(true)
     private val showW = mutableStateOf(true)
     private val showE = mutableStateOf(true)
+
+    // 更新检查状态：Pair(最新版本, 下载地址 html_url)，非空时弹更新对话框
+    private val updateInfo = mutableStateOf<Pair<String, String>?>(null)
+    private var checkingUpdate = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -92,6 +101,8 @@ class LogActivity : ComponentActivity(), Runnable {
         } catch (t: Throwable) {
             report(t)
         }
+        // 启动后静默检查更新
+        checkUpdate(silent = true)
     }
 
     fun isLevelEnabled(level: Char): Boolean = when (level) {
@@ -247,11 +258,23 @@ class LogActivity : ComponentActivity(), Runnable {
                     fontWeight = FontWeight.Bold
                 )
                 Spacer(Modifier.height(4.dp))
-                Text(
-                    text = "模块日志监控器",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "模块日志监控器 · v${BuildConfig.VERSION_NAME}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Text(
+                        text = "检查更新",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.clickable { checkUpdate(silent = false) }
+                    )
+                }
                 Spacer(Modifier.height(16.dp))
 
                 // 日志控制卡片
@@ -270,7 +293,33 @@ class LogActivity : ComponentActivity(), Runnable {
                 FooterIcons()
                 Spacer(Modifier.height(8.dp))
             }
+
+            // 更新对话框
+            updateInfo.value?.let { (version, url) ->
+                UpdateDialog(version, url) {
+                    updateInfo.value = null
+                }
+            }
         }
+    }
+
+    @Composable
+    private fun UpdateDialog(version: String, url: String, onDismiss: () -> Unit) {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = { Text("发现新版本 v$version") },
+            text = { Text("当前版本 v${BuildConfig.VERSION_NAME}，可前往 GitHub 下载最新版。") },
+            confirmButton = {
+                TextButton(onClick = { openUrl(url); onDismiss() }) {
+                    Text("去下载")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = onDismiss) {
+                    Text("取消")
+                }
+            }
+        )
     }
 
     @Composable
@@ -352,6 +401,58 @@ class LogActivity : ComponentActivity(), Runnable {
     private fun copyToClipboard(text: String) {
         val cm = getSystemService(ClipboardManager::class.java)
         cm?.setPrimaryClip(ClipData.newPlainText("qq", text))
+    }
+
+    /**
+     * 检查更新：请求 GitHub Releases API 取最新版本号，与当前版本对比。
+     *
+     * @param silent true=静默（无更新不提示，仅手动检查时才弹 Toast）；false=手动（始终给反馈）
+     */
+    private fun checkUpdate(silent: Boolean) {
+        if (checkingUpdate) return
+        checkingUpdate = true
+        Thread {
+            try {
+                val conn = URL("https://api.github.com/repos/tangjin2580/PersonalizeHyperTheme/releases/latest")
+                    .openConnection() as HttpURLConnection
+                conn.connectTimeout = 8000
+                conn.readTimeout = 8000
+                conn.setRequestProperty("Accept", "application/vnd.github+json")
+                conn.setRequestProperty("User-Agent", "PersonalizeHyperTheme")
+                val body = conn.inputStream.bufferedReader().use { it.readText() }
+                val json = JSONObject(body)
+                val tag = json.optString("tag_name", "").removePrefix("v")
+                val htmlUrl = json.optString("html_url", "")
+                runOnUiThread {
+                    checkingUpdate = false
+                    if (tag.isNotEmpty() && compareVersion(tag, BuildConfig.VERSION_NAME) > 0) {
+                        updateInfo.value = tag to htmlUrl
+                    } else if (!silent) {
+                        Toast.makeText(this, "已是最新版本 ${BuildConfig.VERSION_NAME}", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } catch (t: Throwable) {
+                runOnUiThread {
+                    checkingUpdate = false
+                    if (!silent) {
+                        Toast.makeText(this, "检查更新失败：${t.message}", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        }.start()
+    }
+
+    /** 逐段比较版本号，a>b 返回正数 */
+    private fun compareVersion(a: String, b: String): Int {
+        val pa = a.split(".").map { it.toIntOrNull() ?: 0 }
+        val pb = b.split(".").map { it.toIntOrNull() ?: 0 }
+        val n = maxOf(pa.size, pb.size)
+        for (i in 0 until n) {
+            val va = pa.getOrElse(i) { 0 }
+            val vb = pb.getOrElse(i) { 0 }
+            if (va != vb) return va - vb
+        }
+        return 0
     }
 
     @Composable
