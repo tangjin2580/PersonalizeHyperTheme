@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- SnowUI inspired color palette -->
+    <color name="primary_blue">#2563EB</color>
+    <color name="primary_purple">#7C3AED</color>
+    <color name="secondary_purple_a">#8B5CF6</color>
+    <color name="secondary_purple_b">#A78BFA</color>
+    <color name="secondary_blue_a">#3B82F6</color>
+    <color name="secondary_blue_b">#60A5FA</color>
+    <color name="success_green">#10B981</color>
+    <color name="warning_yellow">#F59E0B</color>
+    <color name="error_red">#EF4444</color>
+    
+    <!-- Neutral colors -->
+    <color name="black_100">#000000</color>
+    <color name="black_80">#333333</color>
+    <color name="black_60">#666666</color>
+    <color name="black_40">#999999</color>
+    <color name="black_20">#CCCCCC</color>
+    <color name="black_10">#E5E5E5</color>
+    <color name="black_5">#F2F2F2</color>
+    
+    <color name="white_100">#FFFFFF</color>
+    <color name="white_95">#F8FAFC</color>
+    <color name="white_90">#F1F5F9</color>
+    
+    <!-- Background colors -->
+    <color name="background_light">@color/white_95</color>
+    <color name="surface_light">@color/white_100</color>
+    <color name="surface_elevated">@color/white_100</color>
+    
+    <!-- Text colors -->
+    <color name="text_primary">@color/black_100</color>
+    <color name="text_secondary">@color/black_60</color>
+    <color name="text_tertiary">@color/black_40</color>
+    <color name="text_on_primary">@color/white_100</color>
+    
+    <!-- Log level colors -->
+    <color name="log_verbose">@color/black_40</color>
+    <color name="log_debug">@color/secondary_blue_a</color>
+    <color name="log_info">@color/success_green</color>
+    <color name="log_warning">@color/warning_yellow</color>
+    <color name="log_error">@color/error_red</color>
+    
+    <!-- Button colors -->
+    <color name="button_primary_bg">@color/primary_blue</color>
+    <color name="button_secondary_bg">@color/white_100</color>
+    <color name="button_secondary_border">@color/black_10</color>
+    <color name="button_danger_bg">@color/error_red</color>
+    
+    <!-- Card colors -->
+    <color name="card_bg">@color/surface_light</color>
+    <color name="card_elevation">@color/black_5</color>
+    
+</resources>

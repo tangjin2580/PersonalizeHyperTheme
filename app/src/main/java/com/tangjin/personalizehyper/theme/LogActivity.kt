@@ -4,14 +4,8 @@ import android.app.Activity
 import android.graphics.Typeface
 import android.os.Bundle
 import android.view.View
-import android.widget.Button
-import android.widget.FrameLayout
-import android.widget.HorizontalScrollView
-import android.widget.LinearLayout
-import android.widget.ScrollView
-import android.widget.TextView
-import android.widget.Toast
-import android.widget.ToggleButton
+import android.widget.*
+import androidx.core.content.ContextCompat
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.io.PrintWriter
@@ -51,6 +45,7 @@ class LogActivity : Activity(), View.OnClickListener, Runnable {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setTheme(R.style.Theme_PersonalizeHyperTheme)  // 应用SnowUI主题
         try {
             buildUi()
         } catch (t: Throwable) {
@@ -59,44 +54,87 @@ class LogActivity : Activity(), View.OnClickListener, Runnable {
     }
 
     private fun buildUi() {
-        val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        val bar = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        val root = LinearLayout(this).apply { 
+            orientation = LinearLayout.VERTICAL
+            setBackgroundColor(0xFFF8FAFC.toInt())  // 浅灰色背景
+        }
+        val bar = LinearLayout(this).apply { 
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(dpToPx(16), dpToPx(8), dpToPx(16), dpToPx(8))
+        }
 
         idStart = View.generateViewId()
-        bar.addView(mkBtn("开始", idStart))
+        bar.addView(mkBtn("开始", idStart).apply { 
+            setBackgroundColor(0xFF2563EB.toInt())  // 蓝色按钮
+            setTextColor(0xFFFFFFFF.toInt())
+            setPadding(dpToPx(12), dpToPx(8), dpToPx(12), dpToPx(8))
+        })
         idStop = View.generateViewId()
-        bar.addView(mkBtn("停止", idStop))
+        bar.addView(mkBtn("停止", idStop).apply { 
+            setBackgroundColor(0xFF3B82F6.toInt())  // 浅蓝色按钮
+            setTextColor(0xFFFFFFFF.toInt())
+            setPadding(dpToPx(12), dpToPx(8), dpToPx(12), dpToPx(8))
+        })
         idClear = View.generateViewId()
-        bar.addView(mkBtn("清空", idClear))
-        idRefresh = View.generateViewId()
-        bar.addView(mkBtn("刷新日志", idRefresh))
-        idRestartTheme = View.generateViewId()
-        bar.addView(mkBtn("重启主题", idRestartTheme))
-        idRestartHome = View.generateViewId()
-        bar.addView(mkBtn("重启桌面", idRestartHome))
+        bar.addView(mkBtn("清空", idClear).apply { 
+            setBackgroundColor(0xFFEF4444.toInt())  // 红色按钮
+            setTextColor(0xFFFFFFFF.toInt())
+            setPadding(dpToPx(12), dpToPx(8), dpToPx(12), dpToPx(8))
+        })
+        
+        bar.addView(Space(this).apply {
+            layoutParams = LinearLayout.LayoutParams(dpToPx(8), LinearLayout.LayoutParams.WRAP_CONTENT)
+        })
 
-        bar.addView(TextView(this).apply { text = "等级:" })
+        idRefresh = View.generateViewId()
+        bar.addView(mkBtn("刷新日志", idRefresh).apply { 
+            setBackgroundColor(0xFF10B981.toInt())  // 绿色按钮
+            setTextColor(0xFFFFFFFF.toInt())
+            setPadding(dpToPx(12), dpToPx(8), dpToPx(12), dpToPx(8))
+        })
+        
+        bar.addView(Space(this).apply {
+            layoutParams = LinearLayout.LayoutParams(dpToPx(8), LinearLayout.LayoutParams.WRAP_CONTENT)
+        })
+
+        bar.addView(TextView(this).apply { 
+            text = "等级" 
+            setTextColor(0xFF666666.toInt())  // 深灰色文本
+            setPadding(dpToPx(4), dpToPx(8), 0, dpToPx(8))
+        })
 
         idTglV = View.generateViewId()
-        bar.addView(mkToggle("V", idTglV).apply { isChecked = showV })
+        bar.addView(mkToggle("V", idTglV).apply { 
+            isChecked = showV
+            setBackgroundColor(0xFF999999.toInt())  // 灰色
+            setTextColor(0xFFFFFFFF.toInt())
+        })
         idTglD = View.generateViewId()
-        bar.addView(mkToggle("D", idTglD).apply { isChecked = showD })
+        bar.addView(mkToggle("D", idTglD).apply { 
+            isChecked = showD
+            setBackgroundColor(0xFF3B82F6.toInt())  // 蓝色
+            setTextColor(0xFFFFFFFF.toInt())
+        })
         idTglI = View.generateViewId()
-        bar.addView(mkToggle("I", idTglI).apply { isChecked = showI })
+        bar.addView(mkToggle("I", idTglI).apply { 
+            isChecked = showI
+            setBackgroundColor(0xFF10B981.toInt())  // 绿色
+            setTextColor(0xFFFFFFFF.toInt())
+        })
         idTglW = View.generateViewId()
-        bar.addView(mkToggle("W", idTglW).apply { isChecked = showW })
+        bar.addView(mkToggle("W", idTglW).apply { 
+            isChecked = showW
+            setBackgroundColor(0xFFF59E0B.toInt())  // 黄色
+            setTextColor(0xFFFFFFFF.toInt())
+        })
         idTglE = View.generateViewId()
-        bar.addView(mkToggle("E", idTglE).apply { isChecked = showE })
+        bar.addView(mkToggle("E", idTglE).apply { 
+            isChecked = showE
+            setBackgroundColor(0xFFEF4444.toInt())  // 红色
+            setTextColor(0xFFFFFFFF.toInt())
+        })
 
-        root.addView(
-            HorizontalScrollView(this).apply {
-                layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-                )
-                addView(bar)
-            }
-        )
+        root.addView(bar)
 
         val scroll = ScrollView(this).apply {
             layoutParams = LinearLayout.LayoutParams(
@@ -104,11 +142,16 @@ class LogActivity : Activity(), View.OnClickListener, Runnable {
                 0,
                 1f
             )
+            setBackgroundColor(0xFFFFFFFF.toInt())  // 白色背景
+            setPadding(dpToPx(8), dpToPx(8), dpToPx(8), dpToPx(8))
         }
         val tv = TextView(this).apply {
             id = View.generateViewId()
-            textSize = 11f
+            textSize = 12f
             typeface = Typeface.MONOSPACE
+            setTextColor(0xFF333333.toInt())  // 深灰色文本
+            setBackgroundColor(0xFFFFFFFF.toInt())  // 白色背景
+            setPadding(dpToPx(12), dpToPx(12), dpToPx(12), dpToPx(12))
         }
         logView = tv
         scroll.addView(tv, FrameLayout.LayoutParams(
@@ -119,6 +162,8 @@ class LogActivity : Activity(), View.OnClickListener, Runnable {
 
         setContentView(root)
     }
+    
+    private fun dpToPx(dp: Int): Int = (dp * resources.displayMetrics.density).toInt()
 
     private fun mkBtn(text: String, id: Int): Button = Button(this).apply {
         setText(text)
