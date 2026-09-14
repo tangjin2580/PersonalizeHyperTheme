@@ -52,6 +52,8 @@ jobs:
     needs: build
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - name: Download Release APK
@@ -68,6 +70,11 @@ jobs:
           files: release-apk/*.apk
           draft: false
           prerelease: false
-          generate_release_notes: true
+          body: |
+            ## 更新内容
+            - Jetpack Compose 现代化界面
+            - 系统快捷操作：重启桌面 / 智能助理 / 主题
+            - 状态栏 edge-to-edge 融合 + 底部社交图标
+            - 检查更新功能
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
