@@ -52,5 +52,8 @@
     <!-- Card colors -->
     <color name="card_bg">@color/surface_light</color>
     <color name="card_elevation">@color/black_5</color>
+
+    <!-- Adaptive icon 背景（图标为透明背景 PNG，用白色底） -->
+    <color name="ic_launcher_background">#FFFFFF</color>
     
 </resources>
