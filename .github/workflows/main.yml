@@ -35,20 +35,25 @@ jobs:
       - name: Decode signing key (mrli-key.jks)
         # 仅在仓库配置了 Secrets 时才签名，否则出未签名包（构建不阻塞）。
         # 需要 4 个 Secret：MRLI_KEY_JKS_BASE64 / KEYSTORE_PASSWORD / KEY_ALIAS / KEY_PASSWORD
-        if: ${{ secrets.MRLI_KEY_JKS_BASE64 != '' }}
+        # 注意：step 级 if 不能使用 secrets 上下文（GitHub 限制），故把“是否配置密钥”的判断放到脚本里。
         env:
           MRLI_KEY_JKS_BASE64: ${{ secrets.MRLI_KEY_JKS_BASE64 }}
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
-          echo "$MRLI_KEY_JKS_BASE64" | base64 -d > app/mrli-key.jks
-          {
-            echo "KEYSTORE_FILE=${{ github.workspace }}/app/mrli-key.jks"
-            echo "KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD"
-            echo "KEY_ALIAS=$KEY_ALIAS"
-            echo "KEY_PASSWORD=$KEY_PASSWORD"
-          } >> "$GITHUB_ENV"
+          if [ -n "$MRLI_KEY_JKS_BASE64" ]; then
+            echo "$MRLI_KEY_JKS_BASE64" | base64 -d > app/mrli-key.jks
+            {
+              echo "KEYSTORE_FILE=${{ github.workspace }}/app/mrli-key.jks"
+              echo "KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD"
+              echo "KEY_ALIAS=$KEY_ALIAS"
+              echo "KEY_PASSWORD=$KEY_PASSWORD"
+            } >> "$GITHUB_ENV"
+            echo "Signing key decoded; release APK will be signed."
+          else
+            echo "MRLI_KEY_JKS_BASE64 not set; building unsigned APK."
+          fi
 
       - name: Build Debug APK (for testing)
         run: ./gradlew assembleDebug
