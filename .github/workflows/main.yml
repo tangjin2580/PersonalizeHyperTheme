@@ -52,10 +52,12 @@ jobs:
           tail -25 "$OUT"
           if [ "$RC" -ne 0 ]; then
             BODY="$(tail -c 3500 "$OUT")"
-            jq -n --arg b "SDK INSTALL FAILED (run ${GITHUB_RUN_ID:-?}) rc=$RC
-
---- sdkmanager output (tail) ---
-$BODY" '{body:$b}' > /tmp/payload.json
+            {
+              echo "SDK INSTALL FAILED (run ${GITHUB_RUN_ID:-?}) rc=$RC"
+              echo
+              echo "--- sdkmanager output (tail) ---"
+              echo "$BODY"
+            } | jq -Rs '{body: .}' > /tmp/payload.json
             curl -sS -X POST \
               -H "Authorization: Bearer $GITHUB_TOKEN" \
               -H "Accept: application/vnd.github+json" \
