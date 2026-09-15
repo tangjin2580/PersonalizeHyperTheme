@@ -25,60 +25,47 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Install Android SDK targets (android-37 platform + build-tools 36.0.0)
-        # 直接调用 GitHub runner 自带的 sdkmanager。关键排错手段：通过 ::error:: / ::notice:: workflow
-        # 命令把“可用平台列表”和“安装失败原因”写成 annotation——annotation 可通过 GitHub API
-        # （actions/runs/<id>/annotations）匿名读取，而 workflow 日志本身匿名读不到。
+      - name: Setup Android SDK (with cache)
+        # 用 action 装好 SDK 根 + 最新 cmdline-tools（runner 自带的 cmdline-tools/16.0 太旧，
+        # 解析不了 android-37；action 会下载最新版 sdkmanager 并缓存到 ~/android-sdk，主分支同款）。
+        uses: android-actions/setup-android@v3
+        with:
+          android-sdk-file: ~/android-sdk
+
+      - name: Install API 37 platform + build-tools 36.0.0
+        # 装本项目精确需要的包。失败时把 sdkmanager 完整输出以 commit comment 回写
+        # （GITHUB_TOKEN 在 workflow 内可用，匿名 API 可读），彻底解决“日志读不到”的盲调问题。
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set +e
           export ANDROID_HOME="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
           export ANDROID_SDK_ROOT="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
-          echo "ANDROID_HOME=$ANDROID_HOME" >> "$GITHUB_ENV"
-          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> "$GITHUB_ENV"
-
-          SDKMANAGER=$(ls "$ANDROID_HOME"/cmdline-tools/*/bin/sdkmanager 2>/dev/null | head -1)
-          [ -z "$SDKMANAGER" ] && SDKMANAGER="$(command -v sdkmanager || true)"
-          if [ -z "$SDKMANAGER" ]; then
-            echo "::error::sdkmanager not found under $ANDROID_HOME"
-            exit 1
-          fi
+          SDKMANAGER="$(command -v sdkmanager || ls "$ANDROID_HOME"/cmdline-tools/*/bin/sdkmanager 2>/dev/null | head -1)"
           echo "Using sdkmanager: $SDKMANAGER"
-          "$SDKMANAGER" --version 2>&1 | head -3 || true
-
-          # 把 runner 仓库里“实际可用的 SDK Platform 版本”写成 notice（匿名 API 可读），
-          # 这样若后面安装失败，我们能直接看到正确的包名该写什么。
-          PLATFORMS=$("$SDKMANAGER" --list 2>/dev/null | grep -E 'Android SDK Platform' | head -40 | tr '\n' '%0A')
-          echo "::notice title=Available SDK Platforms::${PLATFORMS}"
-
-          echo "Accepting all SDK licenses..."
+          "$SDKMANAGER" --version 2>&1 | head -2 || true
           yes | "$SDKMANAGER" --licenses >/tmp/lic.txt 2>&1 || true
+          OUT="$(mktemp)"
+          yes | "$SDKMANAGER" "platforms;android-37.2" "build-tools;36.0.0" "platform-tools" >"$OUT" 2>&1
+          RC=$?
+          echo "sdkmanager install rc=$RC"
+          tail -25 "$OUT"
+          if [ "$RC" -ne 0 ]; then
+            BODY="$(tail -c 3500 "$OUT")"
+            jq -n --arg b "SDK INSTALL FAILED (run ${GITHUB_RUN_ID:-?}) rc=$RC
 
-          install_one() {
-            local pkg="$1"
-            echo "::group::install $pkg"
-            yes | "$SDKMANAGER" "$pkg" 2>&1 | tee -a /tmp/sdk_out.txt
-            local rc=${PIPESTATUS[0]}
-            echo "exit=$rc for $pkg"
-            echo "::endgroup::"
-            return $rc
-          }
-
-          OK=1
-          for p in "platforms;android-37.2" "build-tools;36.0.0" "platform-tools"; do
-            install_one "$p" || OK=0
-          done
-
-          echo "---- sdkmanager combined tail ----" >> "$GITHUB_STEP_SUMMARY"
-          tail -30 /tmp/sdk_out.txt >> "$GITHUB_STEP_SUMMARY"
-
-          if [ "$OK" -eq 0 ]; then
-            echo "::error::SDK install failed. Matching sdkmanager output:"
-            grep -iE 'failed|error|warning|not found|could not|exception' /tmp/sdk_out.txt | head -20 | sed 's/^/::error::/'
-            echo "::error::full tail:"
-            tail -25 /tmp/sdk_out.txt | sed 's/^/::error::/'
+--- sdkmanager output (tail) ---
+$BODY" '{body:$b}' > /tmp/payload.json
+            curl -sS -X POST \
+              -H "Authorization: Bearer $GITHUB_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              -H "Content-Type: application/json" \
+              "https://api.github.com/repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}/comments" \
+              --data @/tmp/payload.json | head -c 400
+            echo "::error::SDK install failed rc=$RC; see commit comment on $GITHUB_SHA"
             exit 1
           fi
-          echo "::notice::Android SDK install completed successfully"
+          echo "::notice::Android SDK (api37 + build-tools 36.0.0) installed"
           exit 0
 
       - name: Decode signing key (mrli-key.jks)
