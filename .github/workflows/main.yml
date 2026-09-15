@@ -25,50 +25,47 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      - name: Cache Android SDK
+        uses: actions/cache@v4
+        with:
+          path: ~/android-sdk
+          key: android-sdk-api37-${{ runner.os }}-v1
+
       - name: Install Android SDK (api37 + build-tools 36.0.0)
-        # 自包含：先试 runner 自带 sdkmanager；若失败（解析不了 android-37 或下载问题），
-        # 再下载最新 commandline-tools 重试。失败时把完整日志以 commit comment 回写
-        # （GITHUB_TOKEN 在 workflow 内可用、匿名 API 可读），彻底打通“日志读不到”的盲调。
+        # runner 自带的 cmdline-tools/16.0 解析不了 android-37，故改用缓存/下载的最新 commandline-tools。
+        # SDK 根固定在 ~/android-sdk 并整体缓存，首次下载后后续 run 直接复用，避免每次拉 130MB。
+        # 失败时把完整日志以 commit comment 回写（GITHUB_TOKEN 可用、匿名 API 可读），便于排错。
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set +e
           export ANDROID_HOME="$HOME/android-sdk"
-          mkdir -p "$ANDROID_HOME/cmdline-tools"
           export ANDROID_SDK_ROOT="$ANDROID_HOME"
+          mkdir -p "$ANDROID_HOME/cmdline-tools"
           LOG="$(mktemp)"
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
 
-          install_with() {
-            local SM="$1"
-            echo "==== trying sdkmanager: $SM ====" | tee -a "$LOG"
-            "$SM" --version 2>&1 | head -2 | tee -a "$LOG" || true
-            yes | "$SM" --licenses >>"$LOG" 2>&1 || true
-            yes | "$SM" "platforms;android-37.2" "build-tools;36.0.0" "platform-tools" >>"$LOG" 2>&1
-            return $?
-          }
-
-          # 1) runner 自带 sdkmanager
-          SM="$(ls /usr/local/lib/android/sdk/cmdline-tools/*/bin/sdkmanager 2>/dev/null | head -1)"
-          RC=1
-          if [ -n "$SM" ]; then
-            install_with "$SM"; RC=$?
+          if [ -x "$SDKMANAGER" ]; then
+            echo "SDK present (cache hit); verifying packages..." | tee -a "$LOG"
           else
-            echo "runner sdkmanager not found" | tee -a "$LOG"
-          fi
-
-          # 2) 若失败，下载最新 commandline-tools 再试
-          if [ "$RC" -ne 0 ]; then
-            echo "==== runner sdkmanager failed (rc=$RC); downloading latest commandline-tools ====" | tee -a "$LOG"
+            echo "SDK not cached; downloading latest commandline-tools..." | tee -a "$LOG"
             curl -sSL -o /tmp/cmdtools.zip "https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip" >>"$LOG" 2>&1
-            if [ -s /tmp/cmdtools.zip ]; then
-              rm -rf "$ANDROID_HOME/cmdline-tools/latest"
+            if [ ! -s /tmp/cmdtools.zip ]; then
+              echo "commandline-tools download produced empty file" | tee -a "$LOG"
+            else
               unzip -q -o /tmp/cmdtools.zip -d "$ANDROID_HOME/cmdline-tools" >>"$LOG" 2>&1
               mv "$ANDROID_HOME/cmdline-tools/cmdline-tools" "$ANDROID_HOME/cmdline-tools/latest" 2>/dev/null
-              SM2="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
-              install_with "$SM2"; RC=$?
-            else
-              echo "commandline-tools download produced empty file" | tee -a "$LOG"
             fi
+          fi
+
+          if [ ! -x "$SDKMANAGER" ]; then
+            echo "sdkmanager still missing after setup" | tee -a "$LOG"
+            RC=1
+          else
+            "$SDKMANAGER" --version 2>&1 | head -2 | tee -a "$LOG" || true
+            yes | "$SDKMANAGER" --licenses >>"$LOG" 2>&1 || true
+            yes | "$SDKMANAGER" "platforms;android-37.2" "build-tools;36.0.0" "platform-tools" >>"$LOG" 2>&1
+            RC=$?
           fi
 
           echo "FINAL sdkmanager rc=$RC"
@@ -90,7 +87,7 @@ jobs:
             echo "::error::SDK install failed rc=$RC; see commit comment on $GITHUB_SHA"
             exit 1
           fi
-          echo "::notice::Android SDK (api37 + build-tools 36.0.0) installed at $ANDROID_HOME"
+          echo "::notice::Android SDK (api37 + build-tools 36.0.0) ready at $ANDROID_HOME"
           exit 0
 
       - name: Decode signing key (mrli-key.jks)
