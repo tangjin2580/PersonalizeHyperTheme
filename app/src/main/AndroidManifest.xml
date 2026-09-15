@@ -18,8 +18,14 @@
             android:name="xposeddescription"
             android:value="@string/xposed_init" />
 
+        <!-- 旧键：Xposed Installer 时代沿用的 minVersion（LSPosed 仍兼容识别） -->
         <meta-data
             android:name="xposedminversion"
+            android:value="82" />
+
+        <!-- 新键：让新版 LSPosed/Vector 规范化读取最低 API（与上面并存，互不影响） -->
+        <meta-data
+            android:name="xposedminapi"
             android:value="82" />
 
         <activity
