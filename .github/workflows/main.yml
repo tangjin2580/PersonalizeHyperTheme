@@ -25,13 +25,21 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Setup Android SDK (incl. android-37 + build-tools 36.0.0)
-        uses: android-actions/setup-android@v3
-        with:
-          # 注意：不要再列 "tools" —— 旧版 SDK Tools 包已从仓库移除，
-          # sdkmanager 找不到会直接 exit 1（本次 api102 run #18 正是卡在这）。
-          # cmdline-tools 由 action 自带，这里只需 platform-tools + 目标平台/编译工具。
-          packages: 'platform-tools platforms;android-37 build-tools;36.0.0'
+      - name: Install Android SDK targets (android-37 platform + build-tools 36.0.0)
+        # 不再用 android-actions/setup-android：它会默认/显式安装已从仓库移除的 'tools' 包、
+        # 还会跑 --licenses 与逐包循环，链路脆弱。GitHub runner 自带 sdkmanager
+        # （/usr/local/lib/android/sdk/cmdline-tools/*/bin/sdkmanager，cmdline-tools 16.0），
+        # 直接调用即可，android-37 这类新包也能识别。
+        run: |
+          export ANDROID_HOME="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          echo "ANDROID_HOME=$ANDROID_HOME" >> "$GITHUB_ENV"
+          SDKMANAGER=$(ls "$ANDROID_HOME"/cmdline-tools/*/bin/sdkmanager 2>/dev/null | head -1)
+          if [ -z "$SDKMANAGER" ]; then
+            echo "sdkmanager not found under $ANDROID_HOME/cmdline-tools; falling back to PATH"
+            SDKMANAGER="$(command -v sdkmanager || echo sdkmanager)"
+          fi
+          echo "Using sdkmanager: $SDKMANAGER"
+          yes | "$SDKMANAGER" --sdk_root="$ANDROID_HOME" "platforms;android-37" "build-tools;36.0.0" "platform-tools"
 
       - name: Decode signing key (mrli-key.jks)
         # 仅在仓库配置了 Secrets 时才签名，否则出未签名包（构建不阻塞）。
