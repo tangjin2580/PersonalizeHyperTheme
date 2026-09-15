@@ -25,37 +25,60 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Setup Android SDK (with cache)
-        # 用 action 装好 SDK 根 + 最新 cmdline-tools（runner 自带的 cmdline-tools/16.0 太旧，
-        # 解析不了 android-37；action 会下载最新版 sdkmanager 并缓存到 ~/android-sdk，主分支同款）。
-        uses: android-actions/setup-android@v3
-        with:
-          android-sdk-file: ~/android-sdk
-
-      - name: Install API 37 platform + build-tools 36.0.0
-        # 装本项目精确需要的包。失败时把 sdkmanager 完整输出以 commit comment 回写
-        # （GITHUB_TOKEN 在 workflow 内可用，匿名 API 可读），彻底解决“日志读不到”的盲调问题。
+      - name: Install Android SDK (api37 + build-tools 36.0.0)
+        # 自包含：先试 runner 自带 sdkmanager；若失败（解析不了 android-37 或下载问题），
+        # 再下载最新 commandline-tools 重试。失败时把完整日志以 commit comment 回写
+        # （GITHUB_TOKEN 在 workflow 内可用、匿名 API 可读），彻底打通“日志读不到”的盲调。
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set +e
-          export ANDROID_HOME="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
-          export ANDROID_SDK_ROOT="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
-          SDKMANAGER="$(command -v sdkmanager || ls "$ANDROID_HOME"/cmdline-tools/*/bin/sdkmanager 2>/dev/null | head -1)"
-          echo "Using sdkmanager: $SDKMANAGER"
-          "$SDKMANAGER" --version 2>&1 | head -2 || true
-          yes | "$SDKMANAGER" --licenses >/tmp/lic.txt 2>&1 || true
-          OUT="$(mktemp)"
-          yes | "$SDKMANAGER" "platforms;android-37.2" "build-tools;36.0.0" "platform-tools" >"$OUT" 2>&1
-          RC=$?
-          echo "sdkmanager install rc=$RC"
-          tail -25 "$OUT"
+          export ANDROID_HOME="$HOME/android-sdk"
+          mkdir -p "$ANDROID_HOME/cmdline-tools"
+          export ANDROID_SDK_ROOT="$ANDROID_HOME"
+          LOG="$(mktemp)"
+
+          install_with() {
+            local SM="$1"
+            echo "==== trying sdkmanager: $SM ====" | tee -a "$LOG"
+            "$SM" --version 2>&1 | head -2 | tee -a "$LOG" || true
+            yes | "$SM" --licenses >>"$LOG" 2>&1 || true
+            yes | "$SM" "platforms;android-37.2" "build-tools;36.0.0" "platform-tools" >>"$LOG" 2>&1
+            return $?
+          }
+
+          # 1) runner 自带 sdkmanager
+          SM="$(ls /usr/local/lib/android/sdk/cmdline-tools/*/bin/sdkmanager 2>/dev/null | head -1)"
+          RC=1
+          if [ -n "$SM" ]; then
+            install_with "$SM"; RC=$?
+          else
+            echo "runner sdkmanager not found" | tee -a "$LOG"
+          fi
+
+          # 2) 若失败，下载最新 commandline-tools 再试
           if [ "$RC" -ne 0 ]; then
-            BODY="$(tail -c 3500 "$OUT")"
+            echo "==== runner sdkmanager failed (rc=$RC); downloading latest commandline-tools ====" | tee -a "$LOG"
+            curl -sSL -o /tmp/cmdtools.zip "https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip" >>"$LOG" 2>&1
+            if [ -s /tmp/cmdtools.zip ]; then
+              rm -rf "$ANDROID_HOME/cmdline-tools/latest"
+              unzip -q -o /tmp/cmdtools.zip -d "$ANDROID_HOME/cmdline-tools" >>"$LOG" 2>&1
+              mv "$ANDROID_HOME/cmdline-tools/cmdline-tools" "$ANDROID_HOME/cmdline-tools/latest" 2>/dev/null
+              SM2="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+              install_with "$SM2"; RC=$?
+            else
+              echo "commandline-tools download produced empty file" | tee -a "$LOG"
+            fi
+          fi
+
+          echo "FINAL sdkmanager rc=$RC"
+          tail -40 "$LOG"
+          if [ "$RC" -ne 0 ]; then
+            BODY="$(tail -c 6000 "$LOG")"
             {
               echo "SDK INSTALL FAILED (run ${GITHUB_RUN_ID:-?}) rc=$RC"
               echo
-              echo "--- sdkmanager output (tail) ---"
+              echo "----- full diagnostic log (tail) -----"
               echo "$BODY"
             } | jq -Rs '{body: .}' > /tmp/payload.json
             curl -sS -X POST \
@@ -67,7 +90,7 @@ jobs:
             echo "::error::SDK install failed rc=$RC; see commit comment on $GITHUB_SHA"
             exit 1
           fi
-          echo "::notice::Android SDK (api37 + build-tools 36.0.0) installed"
+          echo "::notice::Android SDK (api37 + build-tools 36.0.0) installed at $ANDROID_HOME"
           exit 0
 
       - name: Decode signing key (mrli-key.jks)
