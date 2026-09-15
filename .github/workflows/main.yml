@@ -2,7 +2,7 @@ name: Android CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, api102 ]
     tags: [ 'v*' ]
   pull_request:
     branches: [ main ]
@@ -25,15 +25,35 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Setup Android SDK
+      - name: Setup Android SDK (incl. android-37 + build-tools 36.0.0)
         uses: android-actions/setup-android@v3
         with:
-          android-sdk-file: ~/android-sdk
+          # 默认是 "tools platform-tools"，覆盖时必须把这两项也带上；
+          # 再加 libxposed 102 要求的 platforms;android-37 与 build-tools;36.0.0
+          packages: 'tools platform-tools platforms;android-37 build-tools;36.0.0'
+
+      - name: Decode signing key (mrli-key.jks)
+        # 仅在仓库配置了 Secrets 时才签名，否则出未签名包（构建不阻塞）。
+        # 需要 4 个 Secret：MRLI_KEY_JKS_BASE64 / KEYSTORE_PASSWORD / KEY_ALIAS / KEY_PASSWORD
+        if: ${{ secrets.MRLI_KEY_JKS_BASE64 != '' }}
+        env:
+          MRLI_KEY_JKS_BASE64: ${{ secrets.MRLI_KEY_JKS_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          echo "$MRLI_KEY_JKS_BASE64" | base64 -d > app/mrli-key.jks
+          {
+            echo "KEYSTORE_FILE=${{ github.workspace }}/app/mrli-key.jks"
+            echo "KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD"
+            echo "KEY_ALIAS=$KEY_ALIAS"
+            echo "KEY_PASSWORD=$KEY_PASSWORD"
+          } >> "$GITHUB_ENV"
 
       - name: Build Debug APK (for testing)
         run: ./gradlew assembleDebug
 
-      - name: Build Release APK
+      - name: Build Release APK (signed if key present)
         run: ./gradlew assembleRelease
 
       - name: Upload Debug APK
@@ -76,5 +96,6 @@ jobs:
             - 系统快捷操作：重启桌面 / 智能助理 / 主题
             - 状态栏 edge-to-edge 融合 + 底部社交图标
             - 检查更新功能
+            - libxposed 102 迁移（LSPosed 新框架，入口 META-INF/xposed/java_init.list）
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

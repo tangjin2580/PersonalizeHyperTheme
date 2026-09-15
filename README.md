@@ -96,29 +96,34 @@ adb logcat -s FuckThemeManager:V
 ./gradlew assembleRelease
 ```
 
-环境要求：**JDK 17**、Android SDK（`compileSdk 34`）。
-产物在 `app/build/outputs/apk/release/`，约 396 KB。
+环境要求：**JDK 17**、Android SDK（`compileSdk 37`，需 `platforms;android-37` 与 `build-tools;36.0.0`）。
+产物在 `app/build/outputs/apk/release/`，含 Compose UI 与 DexKit。
 
 ### 依赖
 
 | 依赖 | 用途 |
 | --- | --- |
-| `de.robv.android.xposed:api:82` | Xposed API（compileOnly，运行时由框架提供） |
+| `io.github.libxposed:api:102.0.0` | libxposed 102 模块 API（compileOnly，运行时由 LSPosed 注入） |
+| `de.robv.android.xposed:api:82` | 经典 `XposedBridge.log` 编译期引用（运行时由 LSPosed 兼容提供，LogHelper 已兜底） |
 | `app/libs/miui-framework.jar` | MIUI 内部类（`miui.drm.*`）桩（compileOnly，运行时由宿主提供） |
-| `com.github.kyuubiran:EzXHelper:2.2.1` | 方法 / 字段查找 |
 | `org.luckypray:DexKit:1.1.8` | 按字符串特征反查被混淆的方法（自带 `libdexkit.so`） |
 
-> **注意**：EzXHelper 2.2.1 是用 Kotlin metadata 2.1.0 编译的，**Kotlin 插件必须 ≥ 2.1**，
-> 否则会报 `incompatible version of Kotlin`。
->
-> 另外 EzXHelper 2.2.1 的 hook 扩展（`createHook`）已标为 internal，Kotlin 侧调不到，
-> 因此本项目 **hook 一律使用 Xposed 原生 API**，EzXHelper 只用于方法 / 字段查找。
+> **libxposed 102 迁移要点**：
+> - 模块入口从经典的 `IXposedHookLoadPackage` 改为继承 `io.github.libxposed.api.XposedModule`，
+>   入口类声明在 `app/src/main/resources/META-INF/xposed/java_init.list`（不再是 `assets/xposed_init`）。
+> - Android 框架（原 `packageName == "android"`）改用 `onSystemServerStarting` 回调，
+>   不再走 `onPackageLoaded("android")`。
+> - 原 `XposedInit.kt` + EzXHelper 查找逻辑，已改写为 `Api102Entry.kt` + `Xp.kt`
+>   （`Xp.kt` 用纯反射实现方法/字段查找，**只查自身类 + 框架类防御过滤**，规避早期误 hook
+>   `android.view.View` 导致主题壁纸黑屏的坑）。
+> - 构建工具链：AGP 8.13.2 / Kotlin 2.1.0 / Gradle 8.13 / `build-tools;36.0.0`。
 
 ### 项目结构
 
 ```
 app/src/main/java/com/tangjin/personalizehyper/theme/
-├── XposedInit.kt          # 模块入口，四个作用域的全部 hook
+├── Api102Entry.kt        # libxposed 102 模块入口（onSystemServerStarting + onPackageLoaded 的全部 hook）
+├── Xp.kt                 # 反射查找助手（替代 EzXHelper，含框架类防御过滤）
 ├── LogActivity.kt         # 日志界面（开始/停止/刷新/清空/重启宿主/等级过滤）
 ├── LogReader.kt           # 读取并过滤模块日志
 ├── LogHelper.kt           # 日志双写（logcat + XposedBridge）

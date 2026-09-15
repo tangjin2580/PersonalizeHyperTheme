@@ -1,9 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HyperOS主题破解</string>
-    <string name="module_name">EzXHelper</string>
-    <string name="xposed_init">"作用域必须包含全部作用域，且系统框架生效需重启手机！！
-将模块分享到 酷安/官方Q群/小米社区 等平台，所带来的后果请自行承担
-
-作者：Mr.li｜本项目由 FuckMiuiThemeManager 独立而来（含背屏 apply 修复），随时停更"</string>
 </resources>
