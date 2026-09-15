@@ -28,9 +28,10 @@ jobs:
       - name: Setup Android SDK (incl. android-37 + build-tools 36.0.0)
         uses: android-actions/setup-android@v3
         with:
-          # 默认是 "tools platform-tools"，覆盖时必须把这两项也带上；
-          # 再加 libxposed 102 要求的 platforms;android-37 与 build-tools;36.0.0
-          packages: 'tools platform-tools platforms;android-37 build-tools;36.0.0'
+          # 注意：不要再列 "tools" —— 旧版 SDK Tools 包已从仓库移除，
+          # sdkmanager 找不到会直接 exit 1（本次 api102 run #18 正是卡在这）。
+          # cmdline-tools 由 action 自带，这里只需 platform-tools + 目标平台/编译工具。
+          packages: 'platform-tools platforms;android-37 build-tools;36.0.0'
 
       - name: Decode signing key (mrli-key.jks)
         # 仅在仓库配置了 Secrets 时才签名，否则出未签名包（构建不阻塞）。
