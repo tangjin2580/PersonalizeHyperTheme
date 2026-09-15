@@ -26,20 +26,28 @@ jobs:
         run: chmod +x gradlew
 
       - name: Install Android SDK targets (android-37 platform + build-tools 36.0.0)
-        # 不再用 android-actions/setup-android：它会默认/显式安装已从仓库移除的 'tools' 包、
-        # 还会跑 --licenses 与逐包循环，链路脆弱。GitHub runner 自带 sdkmanager
-        # （/usr/local/lib/android/sdk/cmdline-tools/*/bin/sdkmanager，cmdline-tools 16.0），
-        # 直接调用即可，android-37 这类新包也能识别。
+        # 直接调用 GitHub runner 自带的 sdkmanager（/usr/local/lib/android/sdk/cmdline-tools/*/bin/sdkmanager，cmdline-tools 16.0），
+        # 它能识别 android-37 这类新包；并把输出写入 job Summary 便于排错（API 可读取，无需 admin 权限）。
         run: |
+          set +e
           export ANDROID_HOME="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          export ANDROID_SDK_ROOT="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
           echo "ANDROID_HOME=$ANDROID_HOME" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> "$GITHUB_ENV"
           SDKMANAGER=$(ls "$ANDROID_HOME"/cmdline-tools/*/bin/sdkmanager 2>/dev/null | head -1)
           if [ -z "$SDKMANAGER" ]; then
-            echo "sdkmanager not found under $ANDROID_HOME/cmdline-tools; falling back to PATH"
-            SDKMANAGER="$(command -v sdkmanager || echo sdkmanager)"
+            SDKMANAGER="$(command -v sdkmanager || true)"
           fi
-          echo "Using sdkmanager: $SDKMANAGER"
-          yes | "$SDKMANAGER" --sdk_root="$ANDROID_HOME" "platforms;android-37" "build-tools;36.0.0" "platform-tools"
+          echo "Using sdkmanager: ${SDKMANAGER:-NONE}"
+          if [ -z "$SDKMANAGER" ]; then
+            echo "sdkmanager not found" | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          yes | "$SDKMANAGER" --sdk_root="$ANDROID_HOME" "platforms;android-37" "build-tools;36.0.0" "platform-tools" 2>&1 | tee /tmp/sdk_out.txt
+          RC=${PIPESTATUS[0]}
+          echo "---- sdkmanager tail ----" >> "$GITHUB_STEP_SUMMARY"
+          tail -25 /tmp/sdk_out.txt >> "$GITHUB_STEP_SUMMARY"
+          exit $RC
 
       - name: Decode signing key (mrli-key.jks)
         # 仅在仓库配置了 Secrets 时才签名，否则出未签名包（构建不阻塞）。
