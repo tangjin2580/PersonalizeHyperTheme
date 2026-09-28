@@ -8,7 +8,7 @@ package com.tangjin.personalizehyper.theme
  * 同一套 DRM 校验链路。但我们只希望破解主屏主题，背屏主题必须走真实校验，
  * 否则强置成功反而会让背屏主题应用失败。
  *
- * 难点在于：破解逻辑分散在多处（见 XposedInit）：
+ * 难点在于：破解逻辑分散在多处（见 Api102Entry）：
  *   1. OnlineResourceDetail.toResource 里，根据 category 判断是否「rear」；
  *      一旦判断为背屏，就调用 [markRear] 打开一个时间窗口。
  *   2. DexKit 定位到的 DrmResult 方法里，每次 DRM 校验前都来问一句

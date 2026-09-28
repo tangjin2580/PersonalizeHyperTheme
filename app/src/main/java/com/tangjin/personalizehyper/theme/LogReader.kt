@@ -5,15 +5,16 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 
 /**
- * 日志读取器：跟随 LSPosed 落盘日志，把本模块的 XposedBridge 输出喂给界面。
+ * 日志读取器：跟随 LSPosed 落盘日志，把本模块的输出喂给界面。
  *
- * 与原版 APK 的差异只有一处——日志来源：
+ * 与原版 APK 的差异：
  *
- * 原版读 logcat（`logcat -v threadtime -s 'FuckThemeManager:*'`），
- * 但 Android 11 之后应用只能读自己的 logcat，主题管理器的日志根本读不到，
- * 且 `*` 不是合法优先级，命令恒返回空。因此改成用 root 直接读
- * LSPosed 落盘日志 `/data/adb/lspd/log/modules_*.log`
- * （XposedBridge.log 会被 LSPosed 统一写进这个文件）。
+ * 原版读 logcat；Android 11 之后应用只能读自己的 logcat，主题管理器的日志根本读不到。
+ * 因此改成用 root 直接读 LSPosed 落盘日志 `/data/adb/lspd/log/modules_*.log`
+ * （libxposed 的 XposedInterface.log 会被 LSPosed 统一写进这个文件）。
+ *
+ * libxposed 102 下不再有 legacy 的 XposedBridge 标记，因此模块标识改为按
+ * 包名 `com.tangjin.personalizehyper.theme` 过滤（见 [MODULE_MARK]）。
  *
  * 其余逻辑（等级判定、过滤、喂给界面的方式）与原版一致。
  */
@@ -105,16 +106,16 @@ class LogReader(private val act: LogActivity) : Runnable {
         /** LSPosed 落盘日志路径（通配符，交给 shell 展开） */
         const val LSPD_LOG = "/data/adb/lspd/log/modules_*.log"
 
-        /** LSPosed 写入的模块标识前缀，用于把系统/其它模块的日志全部过滤掉 */
-        private const val MODULE_MARK = "[com.tangjin.personalizehyper.theme,XposedBridge"
+        /** LSPosed 写入的模块标识（按包名过滤），用于把系统/其它模块的日志全部过滤掉 */
+        private const val MODULE_MARK = "com.tangjin.personalizehyper.theme"
 
-        /** 只保留本模块的 XposedBridge 日志 */
+        /** 只保留本模块的日志 */
         fun isModuleLine(line: String): Boolean = line.contains(MODULE_MARK)
 
         /**
          * 把 LSPosed 的长前缀裁掉，只留「时间 + 正文」：
          *
-         * 输入：`[ 2026-09-14T04:36:13.441  10283:10283:10283 I/LSPosedFramework ] (宿主)[com.tangjin.personalizehyper.theme,XposedBridge...] FTM: xxx`
+         * 输入：`[ 2026-09-14T04:36:13.441  10283:10283:10283 I/LSPosedFramework ] (宿主)[com.tangjin.personalizehyper.theme...] FTM: xxx`
          * 输出：`2026-09-14T04:36:13.441 FTM: xxx`
          *
          * 解析不出前缀时原样返回，保证不丢日志。

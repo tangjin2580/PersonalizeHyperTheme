@@ -147,7 +147,7 @@ class LogActivity : ComponentActivity(), Runnable {
             val cmd = arrayOf(
                 "su",
                 "-c",
-                "grep -F '[com.tangjin.personalizehyper.theme,XposedBridge' ${LogReader.LSPD_LOG} | tail -n 300"
+                "grep -F 'com.tangjin.personalizehyper.theme' ${LogReader.LSPD_LOG} | tail -n 300"
             )
             val reader = BufferedReader(
                 InputStreamReader(Runtime.getRuntime().exec(cmd).inputStream)

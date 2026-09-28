@@ -63,7 +63,7 @@
 | V / D / I / W / E | 等级过滤（V 默认关闭） |
 
 **日志来源**：Android 11 之后应用读不到其它进程的 logcat，所以界面读取的是 LSPosed 的落盘日志
-`/data/adb/lspd/log/modules_*.log`，并只保留本模块（`[com.tangjin.personalizehyper.theme,XposedBridge`）的输出。
+`/data/adb/lspd/log/modules_*.log`，并只保留本模块（`com.tangjin.personalizehyper.theme`）的输出。
 因此**首次打开需要授予 root 权限**，若 Magisk 弹出授权请点「允许」并记住。
 
 需要连电脑抓日志时，模块也会**同时**写入 logcat（tag `FuckThemeManager`）：
@@ -96,7 +96,7 @@ adb logcat -s FuckThemeManager:V
 ./gradlew assembleRelease
 ```
 
-环境要求：**JDK 17**、Android SDK（`compileSdk 34`）。
+环境要求：**JDK 17**、Android SDK（`compileSdk 37`）。
 产物在 `app/build/outputs/apk/release/`，约 396 KB。
 
 ### 依赖

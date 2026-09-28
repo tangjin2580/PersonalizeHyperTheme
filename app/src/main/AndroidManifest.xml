@@ -10,23 +10,12 @@
         android:label="@string/app_name"
         android:supportsRtl="false">
 
-        <meta-data
-            android:name="xposedscope"
-            android:resource="@array/xposed_scope" />
-
-        <meta-data
-            android:name="xposeddescription"
-            android:value="@string/xposed_init" />
-
-        <!-- 旧键：Xposed Installer 时代沿用的 minVersion（LSPosed 仍兼容识别） -->
-        <meta-data
-            android:name="xposedminversion"
-            android:value="82" />
-
-        <!-- 新键：让新版 LSPosed/Vector 规范化读取最低 API（与上面并存，互不影响） -->
-        <meta-data
-            android:name="xposedminapi"
-            android:value="82" />
+        <!--
+            libxposed 102 不再使用 legacy 的 xposedmodule / xposedminversion / xposedminapi /
+            xposedscope 这些 meta-data。模块声明改由 src/main/resources/META-INF/xposed/ 下的
+            module.prop、scope.list、java_init.list 承担（见对应文件）。
+            xposedscope / xposeddescription 一并移除，避免框架误读为 legacy 模块。
+        -->
 
         <activity
             android:name=".LogActivity"

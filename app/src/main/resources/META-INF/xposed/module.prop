@@ -1,0 +1,13 @@
+# libxposed 102 模块声明
+# 对应 legacy 的 assets/xposed_init + manifest 里的 xposedmodule / xposedminversion
+minApiVersion=101
+targetApiVersion=102
+staticScope=true
+# autoHotReload=false：
+#   libxposed 102 在热重载时【不会】重放 onPackageReady/onSystemServerStarting，
+#   若开启 true 而 onHotReloaded 里不重新安装 hook，应用更新热重载后 hook 会整体失效
+#   （旧 hook 被默认 onHotReloaded 摘掉、新的又没装上），直到宿主进程重启才恢复。
+#   本项目沿用 legacy「重启宿主即生效」的语义，因此关闭自动热重载。
+#   未来若要开启，需在 onHotReloaded 里通过 HookHandle.replaceHook 或重新定位宿主类
+#   把 hook 再装一遍（见 API102_MIGRATION.md 的「已知限制」）。
+autoHotReload=false
