@@ -3,7 +3,9 @@
     <string-array name="xposed_scope">
         <item>com.android.thememanager</item>
         <item>com.miui.personalassistant</item>
-        <item>android</item>
+        <!-- LSPosed 2.0+ 中 system_server 的作用域标识为 system（android 现指系统对话框进程
+             ChooserActivity/ResolverActivity 等，不会被注入 system_server） -->
+        <item>system</item>
         <item>com.miui.home</item>
     </string-array>
 </resources>

@@ -19,7 +19,8 @@ import java.lang.reflect.Method
  * 模块入口，逻辑与设备上 1.9.0（versionCode 19）的 APK 保持一致。
  *
  * 作用域（见 res/values/array.xml）：
- * - android 系统框架
+ * - system 系统框架（LSPosed 2.0+ 中 system_server 的作用域标识；
+ *   旧版为 android，现 android 指系统对话框进程，不再被注入 system_server）
  * - com.miui.personalassistant 智能助理（背屏/桌面小组件）
  * - com.android.thememanager 主题壁纸
  * - com.miui.home 桌面
@@ -38,10 +39,13 @@ import java.lang.reflect.Method
 class XposedInit : IXposedHookLoadPackage {
 
     override fun handleLoadPackage(lpparam: XC_LoadPackage.LoadPackageParam) {
-        LogHelper.d(lpparam.packageName)
+        LogHelper.d("FTM: module loaded | pkg=${lpparam.packageName} process=${lpparam.processName}")
 
         when (lpparam.packageName) {
-            "android" -> hookSystemFramework()
+            // LSPosed 2.0+ 中 system_server 的包名是 "system"（"android" 现指
+            // ChooserActivity/ResolverActivity 等系统对话框进程）；
+            // 保留 "android" 以兼容 LSPosed 1.x 的旧语义。
+            "system", "android" -> hookSystemFramework()
             "com.miui.personalassistant" -> hookPersonalAssistant(lpparam)
             "com.android.thememanager" -> hookThemeManager(lpparam)
             "com.miui.home" -> hookHome(lpparam)

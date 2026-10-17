@@ -44,11 +44,16 @@
 | --- | --- | --- |
 | 主题壁纸 | `com.android.thememanager` | 主题 / 字体 / 壁纸的购买校验 |
 | 智能助理 | `com.miui.personalassistant` | 付费内容判断 |
-| 系统框架 | `android` | DRM 合法性校验 |
+| 系统框架 | `system` | DRM 合法性校验 |
 | 桌面 | `com.miui.home` | 图标相关 |
 
 > **系统框架勾选后必须重启手机才生效。**
 > 在系统框架生效前，主题可能会不定时恢复默认——这是正常现象，重启后消失。
+>
+> **注意（LSPosed 2.0+ 作用域改名）**：system_server 的作用域标识已从 `android` 改为 `system`，
+> `android` 现指系统对话框进程（ChooserActivity / ResolverActivity 等），不会被注入 system_server。
+> 旧版模块声明的 `android` 作用域在 LSPosed 2.0+ 上会静默失效（无任何报错），表现为主题不定时恢复默认。
+> 如怀疑未生效，可在 LSPosed 日志（verbose）中检索 `process=system systemServer=true` 确认。
 
 ## 日志界面
 
